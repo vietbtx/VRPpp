@@ -49,7 +49,7 @@ def run(batch_size=128, n_epochs=1, accum_iter=1):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda', choices=['cuda', 'cpu'])
-    parser.add_argument('--n-envs', type=int, default=32)
+    parser.add_argument('--n-envs', type=int, default=48)
     parser.add_argument('--n-steps', type=int, default=64)
     parser.add_argument('--hidden-dim', type=int, default=128)
     parser.add_argument('--egde-dim', type=int, default=128)
