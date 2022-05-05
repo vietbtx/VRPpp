@@ -95,7 +95,7 @@ class Runner:
         else:
             end_len = self.n_steps-1
         for step in range(self.n_steps):
-            print(f"s: {step+1} ", end="\r")
+            print(f"Step: {step+1}")
             obs = self.env.get_current_states()
             with torch.no_grad():
                 actions, values, log_probs = self.policy.forward(obs)

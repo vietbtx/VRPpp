@@ -427,7 +427,7 @@ class Decoder(nn.Module):
                 log_prob *= dones
                 count.append(dones)
                 log_probs.append(log_prob)
-                print("\tk:", self.n_step+1, "   ", end="\r")
+                # print("\tk:", self.n_step+1, "   ", end="\r")
             self.all_actions.append(self.action_ids)
             count = torch.stack(count).sum(0)
             actions = torch.stack(self.all_actions).T

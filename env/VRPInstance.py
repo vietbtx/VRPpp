@@ -119,7 +119,6 @@ class VRPInstance:
         self.solution += solved_tour
     
     def step(self, solution, arr=None, worker_id=None):
-        _solution = solution
         offspring = self.vrp.step(solution)
         if arr is not None and worker_id is not None and self.args.imitation_rate > 0:
             arr[worker_id] = 1
