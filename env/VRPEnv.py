@@ -42,7 +42,7 @@ class VRP:
         return score
     
     def init_instance_count(self):
-        return np.array([self.args.max_steps for _ in self.instances])
+        return np.array([self.args.max_count for _ in self.instances])
     
     @property
     def probs(self):

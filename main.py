@@ -72,6 +72,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=3e-4)
     parser.add_argument('--eps', type=float, default=1e-5)
     parser.add_argument('--max-steps', type=int, default=64)
+    parser.add_argument('--max-count', type=int, default=200)
     parser.add_argument('--reward-norm', type=int, default=100)
     parser.add_argument('--round-int', action='store_true')
     parser.add_argument('--algo', type=str, default='HGS', choices=['VNS', 'HGS'])

@@ -18,7 +18,7 @@ class Runner:
         self.gamma = args.gamma
         self.lam = args.lam
         self.reward_norm = 1.0
-        self.max_count = args.max_steps
+        self.max_count = args.max_count
         self.prev_obs = []
         self.prev_rewards = []
         self.prev_actions = []
