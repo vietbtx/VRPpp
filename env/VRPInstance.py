@@ -42,7 +42,10 @@ class VRPInstance:
         if len(self.demands) > 0 and not self.name.startswith("clone_"):
             if not self.name.startswith("sub_"):
                 name = os.path.normpath(os.path.join(self.args.data_folder, self.name))
-                self.init_solution = generate_init_tours(self, name, 'default', self.args.round_int)
+                init_mode = 'clockhand'
+                if self.mode == "EVRP" and self.args.algo == "VNS":
+                    init_mode = 'default'
+                self.init_solution = generate_init_tours(self, name, init_mode, self.args.round_int)
                 self.vehicles = self.init_solution.count(0) - 1
             else:
                 self.vrp = self.make_env()
@@ -84,7 +87,7 @@ class VRPInstance:
         n = len(init_tours)
         id = 0
         sub_ids = [id]
-        for i in range(1, n_extend_tours//2+1):
+        for i in range(1, n_extend_tours+1):
             sub_ids.append((n+id-i) % n)
             sub_ids.append((id+i) % n)
         sub_ids = set(sub_ids)
@@ -105,6 +108,7 @@ class VRPInstance:
             init_solution = [self.sub_instance.nodes.index(node) for id in sub_ids for node in init_tours[id][1:] if not node.is_demand or node in unsolved_demands]
             init_solution = [init_solution[-1]] + init_solution
             _, self.sub_instance.init_solution, _ = self.sub_instance.step(init_solution)
+        self.sub_instance.vehicles = self.sub_instance.init_solution.count(0) - 1
     
     def done(self, solution):
         nodes = [self.sub_instance.nodes[id] for id in solution]
@@ -124,7 +128,7 @@ class VRPInstance:
             arr[worker_id] = 1
             while any(x == 0 for x in arr):
                 self.vrp.sub_step()
-                arr[worker_id] = 1
+            offspring = self.vrp.get_offspring()
         solution = self.vrp.get_best_solution()
         solution = self.repair_solution(solution)
         score = self.evaluation(solution, self.init_solution)

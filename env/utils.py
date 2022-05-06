@@ -87,18 +87,19 @@ def generate_init_tours(instance, name, init_mode='clockhand', round_int=False):
     print(f"Running initial solution: {name}")
     if init_mode == 'clockhand':
         init = InitClockHand.from_instance(instance, round_int)
-        solution, score = init.init_solution()
+        solution = init.clock_hand_partition(0.0, init.demand_nodes)
+        solution = [node.id for tour in solution for node in tour.nodes]
+        solution = [id for i, id in enumerate(solution) if solution[i] != solution[i-1]] + [init.depot.id]
+        return solution
     elif init_mode == 'dbca':
         solution = instance.make_env('VNS').init_solution()
-        score = instance.evaluation(solution)
     elif init_mode == 'default':
         solution = instance.make_env().init_solution()
         if instance.mode == "EVRP" and instance.args.algo != "VNS":
             vrp_repairer = instance.make_env("VNS")
             vrp_repairer.step(solution)
             solution = vrp_repairer.get_best_solution()
-        score = instance.evaluation(solution)
-    print(f"Init completed! Instance {name}: {score:.3f}")
+    print(f"Init completed! Instance {name}")
     return solution
 
 def angle_comparator(nodes):
@@ -149,6 +150,8 @@ def plot_solution(nodes, tours, name=None, score=None):
         fig.add_trace(go.Scatter(x=station_x, y=station_y, mode='markers', name="station", marker_color="black", marker_size=6, marker_symbol="square"))
     color_ids = np.linspace(0, 1, max(len(tours), 8))
     colors = cm.gist_rainbow(color_ids)
+    all_pos = []
+    all_demands = []
     for k, tour in enumerate(tours):
         pos_x, pos_y = [], []
         demand_x, demand_y = [], []
@@ -162,8 +165,14 @@ def plot_solution(nodes, tours, name=None, score=None):
         color_1 = "rgb(" + ",".join(f"{int(x*240)}" for x in color) + ")"
         color[1] = 1 - 0.7*(1-color[1])
         color_2 = "rgb(" + ",".join(f"{int(x*240)}" for x in color) + ")"
-        fig.add_trace(go.Scatter(x=pos_x, y=pos_y, mode='lines', name=f"EVRP{k+1}", line_color=color_2, line_width=2))
-        fig.add_trace(go.Scatter(x=demand_x, y=demand_y, mode='markers', name=f"EVRP{k+1}", marker_color=color_1, marker_size=3))
+        all_pos.append((pos_x, pos_y, f"EVRP{k+1}", color_2))
+        all_demands.append((demand_x, demand_y, f"EVRP{k+1}", color_1))
+    
+    for pos_x, pos_y, name, color in all_pos:
+        fig.add_trace(go.Scatter(x=pos_x, y=pos_y, mode='lines', name=name, line_color=color, line_width=2))
+    for demand_x, demand_y, name, color in all_pos:
+        fig.add_trace(go.Scatter(x=demand_x, y=demand_y, mode='markers', name=name, marker_color=color, marker_size=3))
+        
     fig.add_trace(go.Scatter(x=[depot.x], y=[depot.y], mode='markers', name="depot", marker_color="red", marker_size=10, marker_symbol="hexagram"))
     fig.update_layout(template='plotly_white')
     fig.update_xaxes(visible=False)

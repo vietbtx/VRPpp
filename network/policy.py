@@ -27,7 +27,11 @@ class Policy(nn.Module):
         self.encoder = Encoder(input_node_dim, hidden_node_dim, input_edge_dim, hidden_edge_dim)
         self.decoder = Decoder(hidden_node_dim, hidden_node_dim)
         self.value_net = Critic(hidden_node_dim)
-        self.disc = nn.Linear(hidden_node_dim, 1)
+        self.disc = nn.Sequential(
+            nn.Linear(hidden_node_dim, hidden_node_dim),
+            nn.Tanh(),
+            nn.Linear(hidden_node_dim, 1)
+        )
 
     def process_encoder(self, data):
         full_data = DataLoader(data, batch_size=len(data))
@@ -57,10 +61,15 @@ class Policy(nn.Module):
             return actions, values, log_probs
         else:
             entropy, log_probs = self.decoder(input_embs, input_pool, masks, actions)
-            return entropy, values, log_probs, input_embs
+            return entropy, values, log_probs, input_pool
     
+    def normalize(self, x):
+        x = x.float()
+        x = F.normalize(x, -1)
+        return x
+
     def forward_loss(self, obs, dones, actions, old_values, returns, old_log_probs, advs, clip_range, use_imitation=True):
-        entropy, vpred, log_probs, student_embs = self.forward(obs, actions)
+        entropy, vpred, log_probs, embs = self.forward(obs, actions)
         vpred_clipped = old_values + torch.clamp(vpred-old_values, -clip_range, clip_range)
 
         vf_losses1 = (vpred - returns)**2
@@ -72,23 +81,30 @@ class Policy(nn.Module):
         pg_losses2 = advs * torch.clamp(ratio, 1.0-clip_range, 1.0+clip_range)
         pg_loss = -torch.min(pg_losses, pg_losses2).mean()
 
-        with torch.no_grad():
-            n = len(dones)
-            expert_ids = torch.zeros(n, dtype=torch.long)
-            for i in range(n):
-                id = n-1-i
-                if dones[id] or i == 0:
-                    expert_id = id
-                expert_ids[id] = expert_id
-            expert_embs = student_embs[expert_ids]
-
-        imitation_loss = torch.tensor(0.0)
+        imitation_loss = torch.tensor(0.0).to(entropy.device)
         if use_imitation:
+            expert_ids = []
+            student_ids = []
+            for id, done in enumerate(dones):
+                if done or id == len(dones) - 1:
+                    expert_ids.append(id)
+                else:
+                    student_ids.append(id)
+            expert_embs = embs[expert_ids]
+            student_embs = embs[student_ids]
             logits_pi = self.disc(student_embs)
             logits_exp = self.disc(expert_embs)
-
             loss_pi = -F.logsigmoid(-logits_pi).mean()
             loss_exp = -F.logsigmoid(logits_exp).mean()
-            imitation_loss = loss_pi + loss_exp
+            with torch.no_grad():
+                target_ids = torch.zeros(len(dones), dtype=torch.long)
+                for i in range(len(dones)):
+                    id = len(dones)-1-i
+                    if dones[id] or i == 0:
+                        target_id = id
+                    target_ids[id] = target_id
+                target_embs = embs[target_ids]
+            loss_delta = F.mse_loss(embs, target_embs)
+            imitation_loss = loss_pi + loss_exp + loss_delta 
         
         return entropy, vf_loss, pg_loss, imitation_loss

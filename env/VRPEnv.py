@@ -95,7 +95,12 @@ class VRP:
         if self.sub_score > score:
             self.sub_score = score
             self.sub_solution = solution
+        
         self.count += 1
+
+        if (self.count + 1) % self.args.n_steps == 0 and self.args.imitation_rate > 0:
+            self.offspring = self.sub_solution  # for imitation
+        
         done = self.is_done()
         instance_score = None
         if done:

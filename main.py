@@ -14,7 +14,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 def train(obs, dones, returns, actions, values, log_probs, batch_size=128, n_epochs=1, accum_iter=1):
     lossvals = []
     for _ in range(n_epochs):
-        dataloader = DataLoader(list(range(len(obs))), batch_size=batch_size, shuffle=True)
+        dataloader = DataLoader(list(range(len(obs))), batch_size=batch_size, shuffle=False)  # don't use shuffle
         for batch_idx, ids in enumerate(dataloader):
             torch.cuda.empty_cache()
             obs_batch = [obs[i] for i in ids]
@@ -24,6 +24,7 @@ def train(obs, dones, returns, actions, values, log_probs, batch_size=128, n_epo
             if (batch_idx + 1) % accum_iter == 0 or batch_idx + 1 == len(dataloader):
                 ppo.optimizer.step()
                 ppo.optimizer.zero_grad()
+    torch.cuda.empty_cache()
     lossvals = np.mean(lossvals, 0)
     return lossvals
 
@@ -50,14 +51,14 @@ def run(batch_size=128, n_epochs=1, accum_iter=1):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda', choices=['cuda', 'cpu'])
-    parser.add_argument('--n-envs', type=int, default=48)
+    parser.add_argument('--n-envs', type=int, default=16)
     parser.add_argument('--n-steps', type=int, default=16)
     parser.add_argument('--hidden-dim', type=int, default=256)
     parser.add_argument('--egde-dim', type=int, default=128)
     parser.add_argument('--gamma', type=float, default=0.995)
     parser.add_argument('--lam', type=float, default=0.95)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--n-epochs', type=int, default=1)
     parser.add_argument('--accumulation-iteration', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default='dataset/data_cvrp')
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     parser.add_argument('--vf-coef', type=float, default=0.5)
     parser.add_argument('--max-grad-norm', type=float, default=0.5)
     parser.add_argument('--clip-range', type=float, default=0.2)
-    parser.add_argument('--imitation-rate', type=float, default=0.013)
+    parser.add_argument('--imitation-rate', type=float, default=0.1)
     parser.add_argument('--lr', type=float, default=3e-4)
     parser.add_argument('--eps', type=float, default=1e-5)
     parser.add_argument('--max-steps', type=int, default=64)
@@ -84,7 +85,7 @@ if __name__ == "__main__":
     ppo = PPO(policy, args)
     print("policy:", policy)
     name = "_".join(os.path.normpath(args.data_folder).split(os.sep))
-    log_name = f"{name}/seed_{args.seed}"
+    log_name = f"{name}_{args.algo}_{args.imitation_rate}/seed_{args.seed}"
     runner = Runner(env, policy, log_name, args)
     run(args.batch_size, args.n_epochs, args.accumulation_iteration)
     

@@ -60,7 +60,6 @@ class Runner:
         score_step = self.instance_count.get(score.name, 0)
         self.writter.add_scalar(f"scores/{score.name}", score.score, score_step)
         self.instance_count[score.name] = score_step + 1
-        self.is_new_best_score = False
         if score.name not in self.best_scores or self.best_scores[score.name].score > score.score:
             self.is_new_best_score = True
             self.best_scores[score.name] = score
@@ -129,7 +128,7 @@ class Runner:
         if self.is_new_best_score:
             self.print_best_score()
             torch.save(self.policy.state_dict(), f"logs/{self.log_name}/model.pt")
-
+            self.is_new_best_score = False
         
         if not self.policy.training:
             return True

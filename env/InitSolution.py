@@ -35,7 +35,7 @@ class Point:
 
 class InitDBCA:
 
-    def __init__(self, instance: VRPInstance) -> None:
+    def __init__(self, instance: VRPInstance, round_int) -> None:
         self.dbca_OUTLIER = -2
         self.dbca_NOT_CLASSIFIED = -1
         self.counter = 0
@@ -44,11 +44,12 @@ class InitDBCA:
         self.nV: int = None
         self.dist: List[List[int]] = None
         self.next: List[List[int]] = None
+        self.round_int = round_int
         self.read_problem(instance)
 
     @classmethod
-    def from_instance(cls, instance):
-        return cls(instance)
+    def from_instance(cls, instance, round_int):
+        return cls(instance, round_int)
 
     def generate_2D_matrix_double(self, n: int, m: int) -> List[List[float]]:
         matrix = []
@@ -649,8 +650,7 @@ class InitClockHand:
                 tours += result
             if tours is None:
                 continue
-            cost = sum(self.compute_distance(tuple(tour.nodes))
-                       for tour in tours)
+            cost = sum(self.compute_distance(tuple(tour.nodes)) for tour in tours)
             if best_cost is None or cost < best_cost:
                 best_cost = cost
                 best_candidate = candidate
