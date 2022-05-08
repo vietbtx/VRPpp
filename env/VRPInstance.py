@@ -48,7 +48,7 @@ class VRPInstance:
                 if self.mode == "EVRP" and self.args.algo == "VNS":
                     init_mode = 'default'
                 self.init_solution = generate_init_tours(self, name, init_mode, self.args.round_int)
-                self.vehicles = self.init_solution.count(0) - 1
+                self.vehicles = self.init_solution.count(0)
             else:
                 self.vrp = self.make_env()
                 if self.mode == "EVRP" and self.args.algo != "VNS":
@@ -93,15 +93,17 @@ class VRPInstance:
         init_tours = convert_solution_to_tours(self.nodes, self.init_solution)
         init_tours = [tour for tour in init_tours if any(node in unsolved_demands for node in tour)]
         n_tours = len(init_tours)
-        sub_id = randint(0, n_tours-1) if random_select else 0
-        init_solution = self.get_sub_tour(init_tours, unsolved_demands, sub_id)
-
-        sub_ids = [sub_id]
+        sub_id = randint(0, n_tours) if random_select else 0
+        
+        init_solution = []
+        sub_ids = []
         while True:
             sub_id = (sub_id+1) % n_tours
             if sub_id not in sub_ids:
                 init_solution += self.get_sub_tour(init_tours, unsolved_demands, sub_id)
                 sub_ids.append(sub_id)
+            else:
+                break
             if len(init_solution) > self.args.min_extend_nodes and len(sub_ids) > self.args.min_extend_tours:
                 break
 
@@ -115,16 +117,17 @@ class VRPInstance:
             f"sub_{self.name}",
             self.args
         )
+        
         self.sub_instance.init_solution = [self.sub_instance.nodes.index(node) for node in init_solution]
         self.sub_instance.init_solution = [self.sub_instance.init_solution[-1]] + self.sub_instance.init_solution
-        self.sub_instance.vehicles = self.sub_instance.init_solution.count(0) - 1
+        self.sub_instance.vehicles = self.sub_instance.init_solution.count(0)
         self.sub_instance.setup()
     
     def done(self, solution):
         nodes = [self.sub_instance.nodes[id] for id in solution]
         solution = [self.nodes.index(node) for node in nodes]
         tours = convert_solution_to_tours(self.nodes, solution)
-        if len(tours) > 2:
+        if len(tours) > 4:
             tours = tours[:-2]
         solved_tour = [node for tour in tours for node in tour[1:]]
         solved_tour = [self.nodes.index(node) for node in solved_tour]
@@ -160,7 +163,11 @@ class VRPInstance:
         return data
 
     def plot(self):
-        score = self.evaluation(self.solution)
+        try:
+            score = self.evaluation(self.solution, False)
+        except:
+            self.name += " Not Valid !!!"
+            score = None
         tours = convert_solution_to_tours(self.nodes, self.solution)
         fig = plot_solution(self.nodes, tours, self.name, score)
         return fig
@@ -213,8 +220,8 @@ class VRPInstance:
             else:
                 demand_nodes.append(node)
             prev_node_id = node_id
-        if is_valid:
-            is_valid = set(demand_nodes) == set(self.demands) and len(demand_nodes) == len(self.demands)
+        is_valid = is_valid and set(demand_nodes) == set(self.demands) and len(demand_nodes) == len(self.demands)
+        is_valid = is_valid and solution[0] == 0 and solution[-1] == 0
         if not allow_invalid:
             assert is_valid
         elif not is_valid:

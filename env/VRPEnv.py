@@ -98,6 +98,7 @@ class VRP:
         instance_score = None
         if done:
             self.instance.done(self.sub_solution)
+            del self.instance.sub_instance
             self.instance.create_sub_instance()
             instance_score = self.reset(self.instance.sub_instance)
         return reward, done, instance_score

@@ -146,7 +146,7 @@ def plot_solution(nodes, tours, name=None, score=None):
     title = f"{name}"
     if score is not None:
         title = f"{name} - {score:.3f}"
-    fig.update_layout(title_text=title, title_x=0.5)
+    fig.update_layout(title_text=title, title_x=0.5, width=640, height=640)
     station_x, station_y = [], []
     for node in nodes:
         if node.is_depot:
