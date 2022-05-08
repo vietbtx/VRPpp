@@ -13,8 +13,10 @@ class Runner:
         self.env = env
         self.policy = policy
         self.args = args
+        self.game = env.env
         self.n_envs = env.n_envs
         self.n_steps = args.n_steps
+        self.n_instances = len(self.game.instances)
         self.gamma = args.gamma
         self.lam = args.lam
         self.reward_norm = 1.0
@@ -28,15 +30,17 @@ class Runner:
         self.dones = [False]*self.n_envs
         self.games_done = 0
         self.log_name = log_name
-        os.makedirs('logs', exist_ok=True)
-        os.makedirs('graphs', exist_ok=True)
-        self.best_scores = load_scores(f"logs/{log_name}")
-        self.game = env.env
-        self.writter = SummaryWriter(f"logs/{log_name}")
+        self.log_path = "logs"
+        self.log_graph_path = "graphs"
+        os.makedirs(f'{self.log_path}', exist_ok=True)
+        os.makedirs(f'{self.log_graph_path}', exist_ok=True)
+        self.best_scores = load_scores(f"{self.log_path}/{log_name}")
+        self.writter = SummaryWriter(f"{self.log_path}/{log_name}")
         self.step = 0
         self.instance_count = {}
         self.history = []
         self.is_new_best_score = False
+        self.process_rate = 0
     
     def print_best_score(self):
         names = []
@@ -50,13 +54,14 @@ class Runner:
         except:
             names.sort()
         print("-"*20)
+        print(f"Processed ... {self.process_rate*100:.2f}%")
         for name in names:
             print(f"   - {self.best_scores[name]}\t{self.instance_count.get(name, 0)}")
         print("-"*20)
 
     def process_score(self, score):
         if score is None:
-            return False
+            return
         score_step = self.instance_count.get(score.name, 0)
         self.writter.add_scalar(f"scores/{score.name}", score.score, score_step)
         self.instance_count[score.name] = score_step + 1
@@ -67,18 +72,20 @@ class Runner:
                 self.env.update_solution(self.best_scores)
             self.history.append(score.name)
             print("New best score:", score)
-            instance = self.game.get_instance(score.name)
-            instance.solution = score.solution
-            instance.save(f"logs/{self.log_name}")
-            save_scores(self.best_scores, f"logs/{self.log_name}")
-            fig = instance.plot()
-            instance.save_plot(fig, f"graphs/{self.log_name}")
+            # instance = self.game.get_instance(score.name)
+            # instance.solution = score.solution
+            # instance.save(f"{self.log_path}/{self.log_name}", score.score)
+            save_scores(self.best_scores, f"{self.log_path}/{self.log_name}")
+            # fig = instance.plot()
+            # instance.save_plot(fig, f"{self.log_graph_path}/{self.log_name}")
+            # fig.data = []
+            # fig.layout = {}
             self.writter.add_scalar(f"best_scores/{score.name}", score.score, score_step)
-            
-        for name, count in self.instance_count.items():
-            if count < self.max_count:
-                return False
-        return True
+        
+        processed = sum([min(count, self.max_count) for count in self.instance_count.values()])
+        total = self.max_count * self.n_instances
+        self.process_rate = processed/total
+        self.writter.add_scalar(f"process", self.process_rate, self.step)
 
     def run(self):
         mb_obs, mb_actions, mb_values, mb_log_probs, mb_rewards, mb_dones = [], [], [], [], [], []
@@ -108,10 +115,11 @@ class Runner:
             self.writter.add_scalar(f"steps", self.step, self.step)
 
             for score in info:
-                is_terminated = self.process_score(score)
-                if is_terminated:
-                    return
-
+                try:
+                    self.process_score(score)
+                except:
+                    pass
+            
             self.dones = dones
             mb_obs.append(obs)
             mb_actions.append(actions)
@@ -127,11 +135,15 @@ class Runner:
         
         if self.is_new_best_score:
             self.print_best_score()
-            torch.save(self.policy.state_dict(), f"logs/{self.log_name}/model.pt")
+            torch.save(self.policy.state_dict(), f"{self.log_path}/{self.log_name}/model.pt")
             self.is_new_best_score = False
-        
+
+        if self.process_rate >= 1:
+            return
+
         if not self.policy.training:
             return True
+
         self.prev_obs = mb_obs[end_len:]
         self.prev_rewards = mb_rewards[end_len:]
         self.prev_actions = mb_actions[end_len:]

@@ -9,6 +9,12 @@ from matplotlib import cm, colors as mc
 import numpy as np
 import torch
 import random
+import plotly.graph_objects as go
+import plotly.io as pio
+try:
+    pio.kaleido.scope.mathjax = None
+except:
+    pass
 
 
 memory = Memory('__pycache__', verbose=0)
@@ -127,13 +133,6 @@ def convert_solution_to_tours(nodes, solution):
     return tours
 
 def plot_solution(nodes, tours, name=None, score=None):
-    import plotly.graph_objects as go
-    import plotly.io as pio
-    try:
-        pio.kaleido.scope.mathjax = None
-    except:
-        pass
-
     fig = go.Figure()
     title = f"{name}"
     if score is not None:

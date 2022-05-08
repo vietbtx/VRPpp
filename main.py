@@ -16,7 +16,7 @@ def train(obs, dones, returns, actions, values, log_probs, batch_size=128, n_epo
     for _ in range(n_epochs):
         dataloader = DataLoader(list(range(len(obs))), batch_size=batch_size, shuffle=False)  # don't use shuffle
         for batch_idx, ids in enumerate(dataloader):
-            torch.cuda.empty_cache()
+            # torch.cuda.empty_cache()
             obs_batch = [obs[i] for i in ids]
             actions_batch = [actions[i] for i in ids]
             losses = ppo.train(obs_batch, dones[ids], returns[ids], actions_batch, values[ids], log_probs[ids])
@@ -34,7 +34,7 @@ def run(batch_size=128, n_epochs=1, accum_iter=1):
     while True:
         results = runner.run()
         if results is None:
-            torch.save(policy.state_dict(), f"logs/{log_name}/model.pt")
+            print("Exiting...")
             break
         obs, dones, returns, actions, values, log_probs = results
         lossvals = train(obs, dones, returns, actions, values, log_probs, batch_size, n_epochs, accum_iter)
@@ -51,20 +51,20 @@ def run(batch_size=128, n_epochs=1, accum_iter=1):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda', choices=['cuda', 'cpu'])
-    parser.add_argument('--n-envs', type=int, default=16)
+    parser.add_argument('--n-envs', type=int, default=32)
     parser.add_argument('--n-steps', type=int, default=16)
     parser.add_argument('--hidden-dim', type=int, default=256)
     parser.add_argument('--egde-dim', type=int, default=128)
     parser.add_argument('--gamma', type=float, default=0.995)
     parser.add_argument('--lam', type=float, default=0.95)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--batch-size', type=int, default=64)
+    parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--n-epochs', type=int, default=1)
     parser.add_argument('--accumulation-iteration', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default='dataset/data_cvrp')
-    parser.add_argument('--extend-tour-rate', type=int, default=0.5)
-    parser.add_argument('--min-extend-tours', type=int, default=10)
-    parser.add_argument('--max-extend-tours', type=int, default=30)
+    parser.add_argument('--extend-tour-rate', type=int, default=0.4)
+    parser.add_argument('--min-extend-tours', type=int, default=16)
+    parser.add_argument('--max-extend-tours', type=int, default=32)
     parser.add_argument('--ent-coef', type=float, default=0.01)
     parser.add_argument('--vf-coef', type=float, default=0.5)
     parser.add_argument('--max-grad-norm', type=float, default=0.5)

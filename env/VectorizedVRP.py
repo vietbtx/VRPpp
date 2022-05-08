@@ -20,10 +20,10 @@ def get_filenames(args):
 def init_instances(args):
     file_names = get_filenames(args)
     func = partial(VRPInstance.from_path, args=args)
-    with Pool(args.n_envs) as p:
-        p.map(func, file_names)
-    # for file_name in file_names:
-    #     func(file_name)
+    # with Pool(4) as p:
+    #     p.map(func, file_names)
+    for file_name in file_names:
+        func(file_name)
 
 
 def read_instances(args):

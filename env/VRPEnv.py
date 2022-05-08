@@ -33,7 +33,7 @@ class VRP:
                     self.instance.init_solution = self.instance.solution
                 self.instance.solution = []
             self.instance: VRPInstance = np.random.choice(self.instances, p=self.probs)
-            self.instance.create_sub_instance(self.n_extend_tours)
+            self.instance.create_sub_instance(self.n_extend_tours, random_select=True)
         self.sub_solution = self.instance.sub_instance.init_solution
         self.offspring = self.sub_solution
         self.sub_score = self.instance.sub_instance.evaluation(self.sub_solution)
@@ -62,6 +62,7 @@ class VRP:
         for instance in self.instances:
             if instance.name == name:
                 return instance
+        raise
 
     def is_done(self):
         return self.count >= self.args.max_steps
@@ -127,7 +128,7 @@ class VRP:
             edge_features.append([energy_cost, prev_node.angle_to(node)])
             edge_features.append([energy_cost, node.angle_to(prev_node)])
             prev_id = id
-
+        # print("edge_index:", len(edge_index))
         edge_index = torch.LongTensor(edge_index).T
         edge_features = torch.FloatTensor(edge_features)
 

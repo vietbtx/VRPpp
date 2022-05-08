@@ -1,6 +1,7 @@
 
 from functools import lru_cache
 import os
+from random import randint
 import numpy as np
 from PIL import Image
 from .VRPNode import Node
@@ -77,7 +78,7 @@ class VRPInstance:
             self.args
         )
     
-    def create_sub_instance(self, n_extend_tours=15):
+    def create_sub_instance(self, n_extend_tours=15, random_select=False):
         unsolved_demands = [node for id, node in enumerate(self.nodes) if id not in self.solution and node.is_demand]
         if len(unsolved_demands) == 0:
             self.sub_instance: VRPInstance = None
@@ -85,7 +86,10 @@ class VRPInstance:
         init_tours = convert_solution_to_tours(self.nodes, self.init_solution)
         init_tours = [tour for tour in init_tours if any(node in unsolved_demands for node in tour)]
         n = len(init_tours)
-        id = 0
+        if not random_select:
+            id = 0
+        else:
+            id = randint(0, n-1)
         sub_ids = [id]
         for i in range(1, n_extend_tours+1):
             sub_ids.append((n+id-i) % n)
@@ -101,13 +105,8 @@ class VRPInstance:
             f"sub_{self.name}",
             self.args
         )
-        if self.args.algo == "HGS":
-            self.sub_instance.init_solution = self.sub_instance.vrp.init_solution()
-            self.sub_instance.init_solution = self.sub_instance.repair_solution(self.sub_instance.init_solution)
-        else:
-            init_solution = [self.sub_instance.nodes.index(node) for id in sub_ids for node in init_tours[id][1:] if not node.is_demand or node in unsolved_demands]
-            init_solution = [init_solution[-1]] + init_solution
-            _, self.sub_instance.init_solution, _ = self.sub_instance.step(init_solution)
+        init_solution = [self.sub_instance.nodes.index(node) for id in sub_ids for node in init_tours[id][1:] if not node.is_demand or node in unsolved_demands]
+        self.sub_instance.init_solution = [init_solution[-1]] + init_solution
         self.sub_instance.vehicles = self.sub_instance.init_solution.count(0) - 1
     
     def done(self, solution):
@@ -131,22 +130,17 @@ class VRPInstance:
             offspring = self.vrp.get_offspring()
         solution = self.vrp.get_best_solution()
         solution = self.repair_solution(solution)
-        score = self.evaluation(solution, self.init_solution)
+        score = self.evaluation(solution)
+        if len(offspring) < len(self.demands):
+            offspring = solution
         return offspring, solution, score
     
     def repair_solution(self, solution):
         if self.vrp_repairer is not None:
-            self.vrp_repairer.step(solution)
-            solution = self.vrp_repairer.get_best_solution()
+            solution = self.vrp_repairer.step(solution)
+        if len(solution) < len(self.demands):
+            solution = self.init_solution
         return solution
-    
-    def _step(self, solution, module):
-        repaired_solution = module.step(solution)
-        try:
-            score = self.evaluation(repaired_solution)
-        except:
-            score = None
-        return repaired_solution, score
 
     def load_image(self, filename) :
         img = Image.open(filename)
@@ -179,16 +173,11 @@ class VRPInstance:
         energy_consumption = data.get("ENERGY_CONSUMPTION", 1.0)
         return cls(mode, capacity, energy_capacity, energy_consumption, nodes, name, args)
     
-    def evaluation(self, solution, default_solution=None):
-        try:
-            return self._evaluation(tuple(solution))
-        except:
-            if default_solution is None:
-                raise
-            return self._evaluation(tuple(default_solution))
+    def evaluation(self, solution, allow_invalid=True):
+        return self._evaluation(tuple(solution), allow_invalid)
 
     @lru_cache
-    def _evaluation(self, solution):
+    def _evaluation(self, solution, allow_invalid=True):
         nodes: List[Node] = self.nodes
         total_distance = 0
         demand_capacity = self.capacity
@@ -206,7 +195,6 @@ class VRPInstance:
             demand_capacity -= node.demand
             if prev_node_id == node_id or energy_capacity < 0 or demand_capacity < 0:
                 is_valid = False
-                break
             if not node.is_demand:
                 if node.is_depot:
                     demand_capacity = self.capacity
@@ -216,16 +204,20 @@ class VRPInstance:
             prev_node_id = node_id
         if is_valid:
             is_valid = set(demand_nodes) == set(self.demands) and len(demand_nodes) == len(self.demands)
-        assert is_valid
+        if not allow_invalid:
+            assert is_valid
+        elif not is_valid:
+            total_distance *= 2 + abs(len(demand_nodes) - len(self.demands))
         return total_distance
     
     @property
     def nodes(self) -> List[Node]:
         return self.depots + self.demands + self.stations
     
-    def save(self, folder="logs"):
+    def save(self, folder="logs", score=None):
         os.makedirs(folder, exist_ok=True)
-        score = self.evaluation(self.solution)
+        if score is None:
+            score = self.evaluation(self.solution)
         with open(f"{folder}/score_{self.name}", "a") as f:
             f.write(f"score: {score} - {self.solution}\n")
     
