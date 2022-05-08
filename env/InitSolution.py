@@ -527,9 +527,6 @@ class Tour:
     @staticmethod
     def distance_to(node_a, node_b) -> float:
         return node_a.distance_to(node_b)
-        # x = node_a.x - node_b.x
-        # y = node_a.y - node_b.y
-        # return math.sqrt(x*x + y*y)
 
     @staticmethod
     @lru_cache

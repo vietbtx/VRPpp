@@ -33,7 +33,7 @@ class VRP:
                     self.instance.init_solution = self.instance.solution
                 self.instance.solution = []
             self.instance: VRPInstance = np.random.choice(self.instances, p=self.probs)
-            self.instance.create_sub_instance(self.n_extend_tours, random_select=True)
+            self.instance.create_sub_instance(random_select=True)
         self.sub_solution = self.instance.sub_instance.init_solution
         self.offspring = self.sub_solution
         self.sub_score = self.instance.sub_instance.evaluation(self.sub_solution)
@@ -49,14 +49,6 @@ class VRP:
         probs = self.instance_lens * self.instance_count
         probs = probs/sum(probs)
         return probs
-
-    @property
-    def n_extend_tours(self):
-        n = self.instance.vehicles
-        n = int(n * self.args.extend_tour_rate)
-        n = min(n, self.args.min_extend_tours)
-        n = max(n, self.args.max_extend_tours)
-        return n
 
     def get_instance(self, name):
         for instance in self.instances:
@@ -106,7 +98,7 @@ class VRP:
         instance_score = None
         if done:
             self.instance.done(self.sub_solution)
-            self.instance.create_sub_instance(self.n_extend_tours)
+            self.instance.create_sub_instance()
             instance_score = self.reset(self.instance.sub_instance)
         return reward, done, instance_score
 
@@ -128,7 +120,6 @@ class VRP:
             edge_features.append([energy_cost, prev_node.angle_to(node)])
             edge_features.append([energy_cost, node.angle_to(prev_node)])
             prev_id = id
-        # print("edge_index:", len(edge_index))
         edge_index = torch.LongTensor(edge_index).T
         edge_features = torch.FloatTensor(edge_features)
 

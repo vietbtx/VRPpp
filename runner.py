@@ -100,8 +100,10 @@ class Runner:
             end_len = self.n_steps
         else:
             end_len = self.n_steps-1
+        # print(f"Running:")
         for step in range(self.n_steps):
-            print(f"Step: {step+1}")
+            # print(f"Step: {step+1}")
+            print(".", end="")
             obs = self.env.get_current_states()
             with torch.no_grad():
                 actions, values, log_probs = self.policy.forward(obs)
@@ -132,6 +134,7 @@ class Runner:
                 mb_rewards[-1][i] = reward / self.reward_norm
                 if dones[i] == True:
                     self.games_done += 1
+        print("")
         
         if self.is_new_best_score:
             self.print_best_score()

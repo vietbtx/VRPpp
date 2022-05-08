@@ -37,7 +37,8 @@ class VRPInstance:
         self.vrp = None
         self.vehicles = 0
         self.solution = []
-        self.setup()
+        if not name.startswith("sub_"):
+            self.setup()
     
     def setup(self):
         if len(self.demands) > 0 and not self.name.startswith("clone_"):
@@ -78,24 +79,33 @@ class VRPInstance:
             self.args
         )
     
-    def create_sub_instance(self, n_extend_tours=15, random_select=False):
+    def get_sub_tour(self, init_tours, unsolved_demands, id):
+        tour = [node for node in init_tours[id] if not node.is_demand or node in unsolved_demands]
+        if tour[0].is_depot:
+            tour = tour[1:]
+        return tour
+
+    def create_sub_instance(self, random_select=False):
         unsolved_demands = [node for id, node in enumerate(self.nodes) if id not in self.solution and node.is_demand]
         if len(unsolved_demands) == 0:
             self.sub_instance: VRPInstance = None
             return
         init_tours = convert_solution_to_tours(self.nodes, self.init_solution)
         init_tours = [tour for tour in init_tours if any(node in unsolved_demands for node in tour)]
-        n = len(init_tours)
-        if not random_select:
-            id = 0
-        else:
-            id = randint(0, n-1)
-        sub_ids = [id]
-        for i in range(1, n_extend_tours+1):
-            sub_ids.append((n+id-i) % n)
-            sub_ids.append((id+i) % n)
-        sub_ids = set(sub_ids)
-        demands = [node for id in sub_ids for node in init_tours[id] if node in unsolved_demands]
+        n_tours = len(init_tours)
+        sub_id = randint(0, n_tours-1) if random_select else 0
+        init_solution = self.get_sub_tour(init_tours, unsolved_demands, sub_id)
+
+        sub_ids = [sub_id]
+        while True:
+            sub_id = (sub_id+1) % n_tours
+            if sub_id not in sub_ids:
+                init_solution += self.get_sub_tour(init_tours, unsolved_demands, sub_id)
+                sub_ids.append(sub_id)
+            if len(init_solution) > self.args.min_extend_nodes and len(sub_ids) > self.args.min_extend_tours:
+                break
+
+        demands = [node for node in init_solution if node.is_demand]
         self.sub_instance = VRPInstance(
             self.mode,
             self.capacity, 
@@ -105,16 +115,17 @@ class VRPInstance:
             f"sub_{self.name}",
             self.args
         )
-        init_solution = [self.sub_instance.nodes.index(node) for id in sub_ids for node in init_tours[id][1:] if not node.is_demand or node in unsolved_demands]
-        self.sub_instance.init_solution = [init_solution[-1]] + init_solution
+        self.sub_instance.init_solution = [self.sub_instance.nodes.index(node) for node in init_solution]
+        self.sub_instance.init_solution = [self.sub_instance.init_solution[-1]] + self.sub_instance.init_solution
         self.sub_instance.vehicles = self.sub_instance.init_solution.count(0) - 1
+        self.sub_instance.setup()
     
     def done(self, solution):
         nodes = [self.sub_instance.nodes[id] for id in solution]
         solution = [self.nodes.index(node) for node in nodes]
         tours = convert_solution_to_tours(self.nodes, solution)
-        if len(tours) > 4:
-            tours = tours[2:-2]
+        if len(tours) > 2:
+            tours = tours[:-2]
         solved_tour = [node for tour in tours for node in tour[1:]]
         solved_tour = [self.nodes.index(node) for node in solved_tour]
         if len(self.solution) == 0:

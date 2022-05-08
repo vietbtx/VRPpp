@@ -61,6 +61,8 @@ def read_instance(path):
                 elif len(parts) == 2:
                     data['DEMAND_SECTION'].append(parts)
                 elif len(parts) == 1:
+                    if 'STATIONS_COORD_SECTION' not in data:
+                        continue
                     data['STATIONS_COORD_SECTION'].append(parts[0])
     return data
 
@@ -93,10 +95,16 @@ def generate_init_tours(instance, name, init_mode='clockhand', round_int=False):
     print(f"Running initial solution: {name}")
     if init_mode == 'clockhand':
         init = InitClockHand.from_instance(instance, round_int)
-        solution = init.clock_hand_partition(0.0, init.demand_nodes)
-        solution = [node.id for tour in solution for node in tour.nodes]
-        solution = [id for i, id in enumerate(solution) if solution[i] != solution[i-1]] + [init.depot.id]
-        return solution
+        logs = []
+        n_samples = 32
+        for angle in range(-n_samples, n_samples):
+            angle = angle / n_samples * math.pi
+            solution = init.clock_hand_partition(angle, init.demand_nodes)
+            solution = [node.id for tour in solution for node in tour.nodes]
+            solution = [id for i, id in enumerate(solution) if solution[i] != solution[i-1]] + [init.depot.id]
+            score = instance.evaluation(solution)
+            logs.append((solution, score))
+        solution, _ = min(logs, key=lambda x: x[1])
     elif init_mode == 'dbca':
         solution = instance.make_env('VNS').init_solution()
     elif init_mode == 'default':
@@ -105,7 +113,8 @@ def generate_init_tours(instance, name, init_mode='clockhand', round_int=False):
             vrp_repairer = instance.make_env("VNS")
             vrp_repairer.step(solution)
             solution = vrp_repairer.get_best_solution()
-    print(f"Init completed! Instance {name}")
+    score = instance.evaluation(solution)
+    print(f"Init completed! Instance {name} - cost = {score:.3f}")
     return solution
 
 def angle_comparator(nodes):
