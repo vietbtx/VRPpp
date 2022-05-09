@@ -5,7 +5,6 @@ import os
 import pickle
 import re
 from joblib import Memory
-from matplotlib import cm, colors as mc
 import numpy as np
 import torch
 import random
@@ -155,8 +154,7 @@ def plot_solution(nodes, tours, title=None):
             station_y.append(node.y)
     if len(station_x) > 1:
         fig.add_trace(go.Scatter(x=station_x, y=station_y, mode='markers', name="station", marker_color="black", marker_size=6, marker_symbol="square"))
-    color_ids = np.linspace(0, 1, max(len(tours), 8))
-    colors = cm.gist_rainbow(color_ids)
+    colors = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52']
     all_pos = []
     all_demands = []
     for k, tour in enumerate(tours):
@@ -168,12 +166,8 @@ def plot_solution(nodes, tours, title=None):
             if node.is_demand:
                 demand_x.append(node.x)
                 demand_y.append(node.y)
-        color = colors[k]
-        color_1 = "rgb(" + ",".join(f"{int(x*240)}" for x in color) + ")"
-        color[1] = 1 - 0.7*(1-color[1])
-        color_2 = "rgb(" + ",".join(f"{int(x*240)}" for x in color) + ")"
-        all_pos.append((pos_x, pos_y, f"EVRP{k+1}", color_2))
-        all_demands.append((demand_x, demand_y, f"EVRP{k+1}", color_1))
+        all_pos.append((pos_x, pos_y, f"EVRP{k+1}", colors[0]))
+        all_demands.append((demand_x, demand_y, f"EVRP{k+1}", colors[1]))
     
     for pos_x, pos_y, name, color in all_pos:
         fig.add_trace(go.Scatter(x=pos_x, y=pos_y, mode='lines', name=name, line_color=color, line_width=2))
@@ -186,10 +180,6 @@ def plot_solution(nodes, tours, title=None):
     fig.update_yaxes(visible=False)
     fig.update_layout(showlegend=False)
     return fig
-
-def lighten_color(color, amount=0.5):
-    color = colorsys.rgb_to_hls(*mc.to_rgb(color))
-    return colorsys.hls_to_rgb(color[0], 1 - amount * (1 - color[1]), color[2])
 
 def set_seed(seed):
     torch.manual_seed(seed)
