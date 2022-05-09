@@ -141,12 +141,11 @@ def convert_solution_to_tours(nodes, solution):
     tours = sort_tours_by_center(tours)
     return tours
 
-def plot_solution(nodes, tours, name=None, score=None):
+def plot_solution(nodes, tours, title=None):
     fig = go.Figure()
-    title = f"{name}"
-    if score is not None:
-        title = f"{name} - {score:.3f}"
-    fig.update_layout(title_text=title, title_x=0.5, width=640, height=640)
+    fig.update_layout(width=640, height=640)
+    if title is not None:
+        fig.update_layout(title_text=title, title_x=0.5)
     station_x, station_y = [], []
     for node in nodes:
         if node.is_depot:
@@ -182,7 +181,7 @@ def plot_solution(nodes, tours, name=None, score=None):
         fig.add_trace(go.Scatter(x=demand_x, y=demand_y, mode='markers', name=name, marker_color=color, marker_size=3))
         
     fig.add_trace(go.Scatter(x=[depot.x], y=[depot.y], mode='markers', name="depot", marker_color="red", marker_size=10, marker_symbol="hexagram"))
-    fig.update_layout(template='plotly_white')
+    fig.update_layout(template='plotly_white', margin=dict(l=0, r=0, t=0, b=0))
     fig.update_xaxes(visible=False)
     fig.update_yaxes(visible=False)
     fig.update_layout(showlegend=False)

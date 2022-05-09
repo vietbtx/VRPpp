@@ -162,14 +162,9 @@ class VRPInstance:
         data = np.asarray(img, dtype="int32")
         return data
 
-    def plot(self):
-        try:
-            score = self.evaluation(self.solution, False)
-        except:
-            self.name += " Not Valid !!!"
-            score = None
+    def plot(self, title=None):
         tours = convert_solution_to_tours(self.nodes, self.solution)
-        fig = plot_solution(self.nodes, tours, self.name, score)
+        fig = plot_solution(self.nodes, tours, title)
         return fig
     
     def save_plot(self, fig, folder="graphs"):
