@@ -1,74 +1,67 @@
+import os
 import torch
-from env.VRPEnv import VRP, read_instances
-from env.utils import set_seed, memory
+from env import VectorizedVRP
+import numpy as np
+from runner import Runner
+from torch.utils.data import DataLoader
 from network.model import PPO, Policy
 import argparse
-import time
-from torch.utils.tensorboard import SummaryWriter
-from runner import load_scores, save_scores
+from env import utils
 
+torch.multiprocessing.set_sharing_strategy('file_system')
 
-def load_model(args, seed=1):
-    policy = Policy(3, args.hidden_dim, 2, args.egde_dim)
-    PPO(policy, args.device)
-    log_name = f"seed_{seed}"
-    if args.init_tour:
-        log_name = f"{log_name}_init_tour"
-    policy.load_state_dict(torch.load(f'logs/{log_name}/model.pt'))
-    policy.eval()
-    return policy
+def run():
+    step = 0
+    while True:
+        results = runner.run()
+        if results is None:
+            print("Exiting...")
+            break
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda', choices=['cuda', 'cpu'])
-    parser.add_argument('--n-envs', type=int, default=16)
-    parser.add_argument('--n-steps', type=int, default=64)
-    parser.add_argument('--hidden-dim', type=int, default=64)
-    parser.add_argument('--egde-dim', type=int, default=16)
-    parser.add_argument('--init-tour', action='store_true')
+    parser.add_argument('--n-envs', type=int, default=32)
+    parser.add_argument('--n-steps', type=int, default=16)
+    parser.add_argument('--hidden-dim', type=int, default=256)
+    parser.add_argument('--egde-dim', type=int, default=128)
     parser.add_argument('--gamma', type=float, default=0.995)
     parser.add_argument('--lam', type=float, default=0.95)
-    parser.add_argument('--reward-norm', type=float, default=1.0)
-    args = parser.parse_args()
+    parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--n-epochs', type=int, default=1)
+    parser.add_argument('--accumulation-iteration', type=int, default=1)
+    parser.add_argument('--data-folder', type=str, default='dataset/data_cvrp')
+    parser.add_argument('--min-extend-nodes', type=int, default=256)
+    parser.add_argument('--min-extend-tours', type=int, default=4)
+    parser.add_argument('--ent-coef', type=float, default=0.01)
+    parser.add_argument('--vf-coef', type=float, default=0.5)
+    parser.add_argument('--max-grad-norm', type=float, default=0.5)
+    parser.add_argument('--clip-range', type=float, default=0.2)
+    parser.add_argument('--imitation-rate', type=float, default=0.1)
+    parser.add_argument('--lr', type=float, default=3e-4)
+    parser.add_argument('--eps', type=float, default=1e-5)
+    parser.add_argument('--max-steps', type=int, default=64)
+    parser.add_argument('--max-count', type=int, default=200)
+    parser.add_argument('--reward-norm', type=int, default=100)
+    parser.add_argument('--round-int', action='store_true')
+    parser.add_argument('--algo', type=str, default='HGS', choices=['VNS', 'HGS'])
+    parser.add_argument('--model-path', type=str)
 
-    writter = SummaryWriter(f"logs/rand_instances")
+    args = parser.parse_args()
+    print("Running:", args)
+    utils.set_seed(args.seed)
+    env = VectorizedVRP(args)
+    policy = Policy(3, args.hidden_dim, 2, args.egde_dim)
+    ppo = PPO(policy, args)
+    policy.load_state_dict(torch.load(args.model_path))
+    policy.eval()
+    name = "_".join(os.path.normpath(args.data_folder).split(os.sep))
+    log_name = f"{name}_{args.algo}_{args.imitation_rate}/seed_{args.seed}"
+    runner = Runner(env, policy, log_name, args)
+    run()
     
 
-    for seed in range(1, 15):
-        print("Start:", f"data_evrp_random/seed_{seed}")
-        policy = load_model(args, seed)
-        set_seed(seed)
-        memory.clear()
-        best_scores = load_scores(f"logs/rand_instances/seed_{seed}")
-        instances = read_instances(f"data_evrp_random/seed_{seed}", args.init_tour, seed)
-        for instance in instances:
-            env = VRP([instance], seed)
-            count = 0
-            step = 0
-            best_score = None
-            t0 = time.time()
-            while count <= 20:
-                print(f"s: {step+1} ", end="\r")
-                step += 1
-                state = env.state()
-                with torch.no_grad():
-                    actions, _, _ = policy.forward([state])
-                    actions = actions.cpu().detach().tolist()
-                _, _, score = env.step((actions[0], {}))
-                if score is not None:
-                    if best_score is None or score.score < best_score.score:
-                        best_score = score
-                        best_scores[score.name] = score
-                        save_scores(best_scores, f"logs/rand_instances/seed_{seed}")
-                    t = time.time() - t0
-                    print("\nscore:", count, score, f"\t{t:.3f}s")
-                    writter.add_scalar(f"seed_{seed}/{score.name}", score.score, count)
-                    t0 = time.time()
-                    count += 1
-                    step = 0
-                    
-            
 
-            
-
+    
