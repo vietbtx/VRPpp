@@ -175,7 +175,7 @@ def plot_solution(nodes, tours, title=None):
         fig.add_trace(go.Scatter(x=demand_x, y=demand_y, mode='markers', name=name, marker_color=color, marker_size=3))
         
     fig.add_trace(go.Scatter(x=[depot.x], y=[depot.y], mode='markers', name="depot", marker_color="red", marker_size=10, marker_symbol="hexagram"))
-    fig.update_layout(template='plotly_white', margin=dict(l=0, r=0, t=0, b=0))
+    fig.update_layout(template='plotly_white', margin=dict(l=0, r=0, t=0, b=0, pad=0, autoexpand=True))
     fig.update_xaxes(visible=False)
     fig.update_yaxes(visible=False)
     fig.update_layout(showlegend=False)
