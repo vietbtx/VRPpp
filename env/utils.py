@@ -1,3 +1,5 @@
+from argparse import Namespace
+from collections import defaultdict
 import colorsys
 from functools import lru_cache
 import math
@@ -6,10 +8,15 @@ import pickle
 import re
 from joblib import Memory
 import numpy as np
+import pandas as pd
 import torch
 import random
 import plotly.graph_objects as go
 import plotly.io as pio
+from tensorboard.backend.event_processing import event_accumulator
+from scour.scour import scourString
+from IPython.display import SVG
+
 try:
     pio.kaleido.scope.mathjax = None
 except:
@@ -170,10 +177,10 @@ def plot_solution(nodes, tours, title=None):
         all_demands.append((demand_x, demand_y, f"EVRP{k+1}", colors[1]))
     
     for pos_x, pos_y, name, color in all_pos:
-        fig.add_trace(go.Scatter(x=pos_x, y=pos_y, mode='lines', name=name, line_color=color, line_width=2))
-    for demand_x, demand_y, name, color in all_pos:
-        fig.add_trace(go.Scatter(x=demand_x, y=demand_y, mode='markers', name=name, marker_color=color, marker_size=3))
-        
+        fig.add_trace(go.Scatter(x=pos_x, y=pos_y, mode='markers+lines', name=name, line_color=color, line_width=2))
+    # for demand_x, demand_y, name, color in all_demands:
+    #     fig.add_trace(go.Scatter(x=demand_x, y=demand_y, mode='markers', name=name, marker_color=color, marker_size=3))
+
     fig.add_trace(go.Scatter(x=[depot.x], y=[depot.y], mode='markers', name="depot", marker_color="red", marker_size=10, marker_symbol="hexagram"))
     fig.update_layout(template='plotly_white', margin=dict(l=0, r=0, t=0, b=0, pad=0, autoexpand=True))
     fig.update_xaxes(visible=False)
@@ -209,3 +216,105 @@ def compare(key):
     
 def sort_instances(names):
     return sorted(names, key=compare)
+
+def read_tensorboard_event(folder):
+    for file in os.listdir(folder):
+        if "events" in file:
+            event = event_accumulator.EventAccumulator(os.path.join(folder, file))
+            event.Reload()
+            return event
+
+def compute_gap(scores, heuristic_scores):
+    gaps = []
+    for name, score in scores.items():
+        baseline_score = heuristic_scores[name]
+        gap = (baseline_score - score) / baseline_score
+        gaps.append(gap)
+    average_gap = np.mean(gaps)
+    return average_gap
+
+@memory.cache
+def load_all_scores(log_folder, seeds, keys):
+    data = defaultdict(list)
+    for seed in seeds:
+        folder = f"{log_folder}/seed_{seed}"
+        data["Folder"].append(folder)
+        event = read_tensorboard_event(folder)
+        steps = event.Scalars("steps")
+        running_time = steps[-1].wall_time - steps[0].wall_time
+        for key in keys:
+            scores = [x.value for x in event.Scalars(f"scores/{key}")]
+            data[key].append(scores)
+        data["Running Time"].append(round(running_time, 2))
+    df = pd.DataFrame(data).set_index(["Folder", "Running Time"])
+    return df
+
+@memory.cache
+def load_all_evrp_rand_scores(log_folders, instance_keys):
+    data = defaultdict(list)
+    for folder in log_folders:
+        data["Folder"].append(folder)
+        event = read_tensorboard_event(folder)
+        steps = event.Scalars("steps")
+        running_time = steps[-1].wall_time - steps[0].wall_time
+        for key in instance_keys:
+            scores = [x.value for x in event.Scalars(f"scores/{key}")]
+            data[key].append(scores)
+        data["Running Time"].append(round(running_time, 2))
+    df = pd.DataFrame(data).set_index(["Folder", "Running Time"])
+    return df
+
+def instance_fig(df, key, folder="dataset/train/data_evrp_wcci", return_seed=False):
+    from env.VRPInstance import VRPInstance
+    best_folder, _ = df[key].idxmin()
+    data = load_scores(best_folder)[key]
+    solution = data.solution
+    args = Namespace(round_int=False, algo=None)
+    if return_seed:
+        seed = best_folder.split("_")[-1]
+        key = f"seed_{seed}/{key}"
+    instance = VRPInstance.from_path(f"{folder}/{key}", args, f"sub_{key}")
+    instance.solution = solution
+    fig = instance.plot()
+    if return_seed:
+        return fig, data.score, seed
+    else:
+        return fig, data.score
+
+def get_gap_df(df, name, running_time, heuristic_scores):
+    results = defaultdict(list)
+    n = max(df.applymap(lambda x: len(x)).max())
+    for i in range(n):
+        score_df = df.applymap(lambda x: min(x[:i+1])).min()
+        gap = compute_gap(score_df, heuristic_scores)
+        results[name].append(gap)
+        results["Running Time"].append((i+1)*running_time/n)
+    results = pd.DataFrame(results)
+    return results
+
+def get_gap_evrp_rand_df(df, name, running_time, heuristic_scores):
+    results = defaultdict(list)
+    n = max(df.applymap(lambda x: len(x)).max())
+    for i in range(n):
+        score_df = df.applymap(lambda x: min(x[:i+1]))
+        data = {}
+        for index, row in score_df.iterrows():
+            seed = index[0].split("/")[-1]
+            row.index = [seed + "_" + x.split(".evrp")[0] for x in row.keys()]
+            data.update(row)
+        gap = compute_gap(data, heuristic_scores)
+        results[name].append(gap)
+        results["Running Time"].append((i+1)*running_time/n)
+    results = pd.DataFrame(results)
+    return results
+
+def show_plotly_figure(fig):
+    options = Namespace()
+    options.enable_viewboxing = True
+    options.enable_id_stripping = True
+    options.enable_comment_stripping = True
+    options.shorten_ids = True
+    options.indent = None
+    svg = fig.to_image("svg")
+    svg = scourString(svg, options)
+    return SVG(svg)
