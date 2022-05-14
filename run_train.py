@@ -61,10 +61,6 @@ if __name__ == "__main__":
         # "python -u main.py --seed=2 --data-folder=dataset/train/data_cvrp --algo=VNS --round-int --max-count=128",
         # "python -u main.py --seed=3 --data-folder=dataset/train/data_cvrp --algo=VNS --round-int --max-count=128",
         
-        # "python -u main.py --seed=1 --data-folder=dataset/train/uniform_N500 --algo=HGS --max-count=4",
-        # "python -u main.py --seed=2 --data-folder=dataset/train/uniform_N500 --algo=HGS --max-count=4",
-        # "python -u main.py --seed=3 --data-folder=dataset/train/uniform_N500 --algo=HGS --max-count=4",
-
         # "python -u main.py --seed=1 --data-folder=dataset/train/data_evrp_wcci --algo=HGS --max-count=24 --imitation-rate=0",
         # "python -u main.py --seed=2 --data-folder=dataset/train/data_evrp_wcci --algo=HGS --max-count=24 --imitation-rate=0",
         # "python -u main.py --seed=3 --data-folder=dataset/train/data_evrp_wcci --algo=HGS --max-count=24 --imitation-rate=0",
@@ -83,9 +79,25 @@ if __name__ == "__main__":
         # "python -u main.py --seed=2 --data-folder=dataset/train/data_cvrp --algo=HGS --round-int --max-count=48 --imitation-rate=0",
         # "python -u main.py --seed=3 --data-folder=dataset/train/data_cvrp --algo=HGS --round-int --max-count=48 --imitation-rate=0",
 
-        "python -u main.py --seed=1 --data-folder=dataset/train/data_cvrp --algo=VNS --round-int --max-count=128 --imitation-rate=0",
-        "python -u main.py --seed=2 --data-folder=dataset/train/data_cvrp --algo=VNS --round-int --max-count=128 --imitation-rate=0",
-        "python -u main.py --seed=3 --data-folder=dataset/train/data_cvrp --algo=VNS --round-int --max-count=128 --imitation-rate=0",
+        # "python -u main.py --seed=1 --data-folder=dataset/train/data_cvrp --algo=VNS --round-int --max-count=128 --imitation-rate=0",
+        # "python -u main.py --seed=2 --data-folder=dataset/train/data_cvrp --algo=VNS --round-int --max-count=128 --imitation-rate=0",
+        # "python -u main.py --seed=3 --data-folder=dataset/train/data_cvrp --algo=VNS --round-int --max-count=128 --imitation-rate=0",
+        
+        # "python -u main.py --seed=1 --data-folder=dataset/train/uniform_N500 --algo=HGS --max-count=4",
+        # "python -u main.py --seed=2 --data-folder=dataset/train/uniform_N500 --algo=HGS --max-count=4",
+        # "python -u main.py --seed=3 --data-folder=dataset/train/uniform_N500 --algo=HGS --max-count=4",
+
+        # "python -u main.py --seed=1 --data-folder=dataset/train/uniform_N1000 --algo=HGS --max-count=2",
+        # "python -u main.py --seed=2 --data-folder=dataset/train/uniform_N1000 --algo=HGS --max-count=2",
+        # "python -u main.py --seed=3 --data-folder=dataset/train/uniform_N1000 --algo=HGS --max-count=2",
+
+        # "python -u main.py --seed=1 --data-folder=dataset/train/uniform_N2000 --algo=HGS --max-count=1",
+        # "python -u main.py --seed=2 --data-folder=dataset/train/uniform_N2000 --algo=HGS --max-count=1",
+        # "python -u main.py --seed=3 --data-folder=dataset/train/uniform_N2000 --algo=HGS --max-count=1",
+
+        "python -u main.py --seed=1 --data-folder=dataset/train/realworld --algo=HGS --max-count=16",
+        "python -u main.py --seed=2 --data-folder=dataset/train/realworld --algo=HGS --max-count=16",
+        "python -u main.py --seed=3 --data-folder=dataset/train/realworld --algo=HGS --max-count=16",
     ]
 
     folders = set([cmd.split("--data-folder=")[1].split(" --max-count")[0] for cmd in all_cmd])

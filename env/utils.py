@@ -14,10 +14,10 @@ import random
 import plotly.graph_objects as go
 import plotly.io as pio
 from tensorboard.backend.event_processing import event_accumulator
-from scour.scour import scourString
-from IPython.display import SVG
 
 try:
+    from scour.scour import scourString
+    from IPython.display import SVG
     pio.kaleido.scope.mathjax = None
 except:
     pass
