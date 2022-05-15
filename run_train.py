@@ -95,9 +95,11 @@ if __name__ == "__main__":
         # "python -u main.py --seed=2 --data-folder=dataset/train/uniform_N2000 --algo=HGS --max-count=1",
         # "python -u main.py --seed=3 --data-folder=dataset/train/uniform_N2000 --algo=HGS --max-count=1",
 
-        "python -u main.py --seed=1 --data-folder=dataset/train/realworld --algo=HGS --max-count=16",
-        "python -u main.py --seed=2 --data-folder=dataset/train/realworld --algo=HGS --max-count=16",
-        "python -u main.py --seed=3 --data-folder=dataset/train/realworld --algo=HGS --max-count=16",
+        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Antwerp --algo=HGS --max-count=128 --max-steps=16",
+        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Brussels --algo=HGS --max-count=128 --max-steps=16",
+        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Flanders --algo=HGS --max-count=128 --max-steps=16",
+        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Ghent --algo=HGS --max-count=128 --max-steps=16",
+        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Leuven --algo=HGS --max-count=128 --max-steps=16",
     ]
 
     folders = set([cmd.split("--data-folder=")[1].split(" --max-count")[0] for cmd in all_cmd])
