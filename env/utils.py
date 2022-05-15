@@ -152,6 +152,26 @@ def plot_solution(nodes, tours, title=None):
     fig.update_layout(width=640, height=640)
     if title is not None:
         fig.update_layout(title_text=title, title_x=0.5)
+    
+    colors = ['#dee1fe', '#c6cafd', '#7C85FB', '#636EFA', '#1929F8', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52']
+    all_pos = []
+    for k, tour in enumerate(tours):
+        pos_x, pos_y = [], []
+        for node in tour:
+            pos_x.append(node.x)
+            pos_y.append(node.y)
+        all_pos.append((pos_x, pos_y, f"EVRP{k+1}"))
+    
+    for pos_x, pos_y, name in all_pos:
+        fig.add_trace(go.Scatter(x=pos_x[:2], y=pos_y[:2], mode='lines', name=name, line_color=colors[0], line_width=2))
+        fig.add_trace(go.Scatter(x=pos_x[-2:], y=pos_y[-2:], mode='lines', name=name, line_color=colors[0], line_width=2))
+    
+    for pos_x, pos_y, name in all_pos:
+        fig.add_trace(go.Scatter(x=pos_x[1:-1], y=pos_y[1:-1], mode='lines', name=name, line_color=colors[1], line_width=2))
+    
+    for pos_x, pos_y, name in all_pos:
+        fig.add_trace(go.Scatter(x=pos_x[1:-1], y=pos_y[1:-1], mode='markers', name=name, line_color=colors[2], marker_size=2))
+
     station_x, station_y = [], []
     for node in nodes:
         if node.is_depot:
@@ -160,29 +180,10 @@ def plot_solution(nodes, tours, title=None):
             station_x.append(node.x)
             station_y.append(node.y)
     if len(station_x) > 1:
-        fig.add_trace(go.Scatter(x=station_x, y=station_y, mode='markers', name="station", marker_color="black", marker_size=6, marker_symbol="square"))
-    colors = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52']
-    all_pos = []
-    all_demands = []
-    for k, tour in enumerate(tours):
-        pos_x, pos_y = [], []
-        demand_x, demand_y = [], []
-        for node in tour:
-            pos_x.append(node.x)
-            pos_y.append(node.y)
-            if node.is_demand:
-                demand_x.append(node.x)
-                demand_y.append(node.y)
-        all_pos.append((pos_x, pos_y, f"EVRP{k+1}", colors[0]))
-        all_demands.append((demand_x, demand_y, f"EVRP{k+1}", colors[1]))
-    
-    for pos_x, pos_y, name, color in all_pos:
-        fig.add_trace(go.Scatter(x=pos_x, y=pos_y, mode='markers+lines', name=name, line_color=color, line_width=2))
-    # for demand_x, demand_y, name, color in all_demands:
-    #     fig.add_trace(go.Scatter(x=demand_x, y=demand_y, mode='markers', name=name, marker_color=color, marker_size=3))
+        fig.add_trace(go.Scatter(x=station_x, y=station_y, mode='markers', name="station", marker_color="black", marker_size=10, marker_symbol="square"))
+    fig.add_trace(go.Scatter(x=[depot.x], y=[depot.y], mode='markers', name="depot", marker_color="red", marker_size=12, marker_symbol="hexagram"))
 
-    fig.add_trace(go.Scatter(x=[depot.x], y=[depot.y], mode='markers', name="depot", marker_color="red", marker_size=10, marker_symbol="hexagram"))
-    fig.update_layout(template='plotly_white', margin=dict(l=0, r=0, t=0, b=0, pad=0, autoexpand=True))
+    fig.update_layout(template='plotly_white', margin=dict(l=4, r=4, t=4, b=4, pad=4, autoexpand=True))
     fig.update_xaxes(visible=False)
     fig.update_yaxes(visible=False)
     fig.update_layout(showlegend=False)
