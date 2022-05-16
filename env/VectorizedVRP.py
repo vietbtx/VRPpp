@@ -36,7 +36,6 @@ def read_instances(args):
 
     
 def worker(remote, parent_remote, args, arr, worker_id):
-    print(f"Starting worker {worker_id}")
     parent_remote.close()
     args.seed = worker_id + args.seed*1024
     instances = read_instances(args)

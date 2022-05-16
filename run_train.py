@@ -3,10 +3,13 @@ import os
 from random import randint
 from time import sleep
 
-def run(cmd, use_sleep=True):
+def run(cmd):
+    try:
+        cmd, i = cmd
+    except:
+        i = 0
     print(cmd)
-    if use_sleep:
-        sleep(randint(0, 200))
+    sleep(i*30)
     os.system(cmd)
 
 if __name__ == "__main__":
@@ -95,17 +98,20 @@ if __name__ == "__main__":
         # "python -u main.py --seed=2 --data-folder=dataset/train/uniform_N2000 --algo=HGS --max-count=1",
         # "python -u main.py --seed=3 --data-folder=dataset/train/uniform_N2000 --algo=HGS --max-count=1",
 
-        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Antwerp --algo=HGS --max-count=128 --max-steps=16",
-        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Brussels --algo=HGS --max-count=128 --max-steps=16",
-        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Flanders --algo=HGS --max-count=128 --max-steps=16",
-        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Ghent --algo=HGS --max-count=128 --max-steps=16",
-        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Leuven --algo=HGS --max-count=128 --max-steps=16",
+        # "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Antwerp --algo=HGS --max-count=1024 --min-extend-nodes=512 --n-envs=16",
+        # "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Leuven --algo=HGS --max-count=1024 --min-extend-nodes=512 --n-envs=16",
+        # "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Ghent --algo=HGS --max-count=1024 --min-extend-nodes=512 --n-envs=16",
+        
+        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Brussels --algo=HGS --max-count=1024 --min-extend-nodes=1024 --n-envs=16",
+        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Flanders --algo=HGS --max-count=1024 --min-extend-nodes=1024 --n-envs=16",
     ]
 
     folders = set([cmd.split("--data-folder=")[1].split(" --max-count")[0] for cmd in all_cmd])
 
     for folder in folders:
-        run(f"python -u init_solution.py --data-folder={folder}", False)
+        run(f"python -u init_solution.py --data-folder={folder}")
+
+    all_cmd = [(cmd, i) for i, cmd in enumerate(all_cmd)]
 
     with Pool(3) as p:
         p.map(run, all_cmd)

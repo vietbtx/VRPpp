@@ -95,13 +95,15 @@ class VRP:
             self.offspring = self.sub_solution  # for imitation
         
         done = self.is_done()
+        if done: self.instance.done(self.sub_solution)
         instance_score = None
+        instance_name = self.instance.name
+        solved_rate = len([x for x in self.instance.solution if self.instance.nodes[x].is_demand]) / len(self.instance.demands)
         if done:
-            self.instance.done(self.sub_solution)
             del self.instance.sub_instance
             self.instance.create_sub_instance()
             instance_score = self.reset(self.instance.sub_instance)
-        return reward, done, instance_score
+        return reward, done, [instance_score, instance_name, solved_rate]
 
     def state(self):
         sub_instance = self.instance.sub_instance

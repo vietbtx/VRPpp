@@ -1,3 +1,4 @@
+from collections import defaultdict
 import os
 import numpy as np
 import torch
@@ -41,6 +42,7 @@ class Runner:
         self.history = []
         self.is_new_best_score = False
         self.process_rate = 0
+        self.solved_rate_dict = defaultdict(list)
     
     def print_best_score(self):
         names = []
@@ -59,7 +61,9 @@ class Runner:
             print(f"   - {self.best_scores[name]}\t{self.instance_count.get(name, 0)}")
         print("-"*20)
 
-    def process_score(self, score):
+    def process_score(self, info):
+        score, name, solved_rate = info
+        self.solved_rate_dict[name].append(solved_rate)
         if score is None:
             return
         score_step = self.instance_count.get(score.name, 0)
@@ -72,22 +76,15 @@ class Runner:
                 self.env.update_solution(self.best_scores)
             self.history.append(score.name)
             print("New best score:", score)
-            # instance = self.game.get_instance(score.name)
-            # instance.solution = score.solution
-            # instance.save(f"{self.log_path}/{self.log_name}", score.score)
             save_scores(self.best_scores, f"{self.log_path}/{self.log_name}")
-            # fig = instance.plot()
-            # instance.save_plot(fig, f"{self.log_graph_path}/{self.log_name}")
-            # fig.data = []
-            # fig.layout = {}
             self.writter.add_scalar(f"best_scores/{score.name}", score.score, score_step)
-        
         processed = sum([min(count, self.max_count) for count in self.instance_count.values()])
         total = self.max_count * self.n_instances
         self.process_rate = processed/total
         self.writter.add_scalar(f"process", self.process_rate, self.step)
 
     def run(self):
+        self.solved_rate_dict = defaultdict(list)
         mb_obs, mb_actions, mb_values, mb_log_probs, mb_rewards, mb_dones = [], [], [], [], [], []
         for i in range(len(self.prev_obs)):
             mb_obs.append(self.prev_obs[i])
@@ -114,11 +111,8 @@ class Runner:
             self.step += 1
             self.writter.add_scalar(f"steps", self.step, self.step)
 
-            for score in info:
-                try:
-                    self.process_score(score)
-                except:
-                    pass
+            for _info in info:
+                self.process_score(_info)
             
             self.dones = dones
             mb_obs.append(obs)

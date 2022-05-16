@@ -16,7 +16,7 @@ def train(obs, dones, returns, actions, values, log_probs, batch_size=128, n_epo
     for _ in range(n_epochs):
         dataloader = DataLoader(list(range(len(obs))), batch_size=batch_size, shuffle=False)  # don't use shuffle
         for batch_idx, ids in enumerate(dataloader):
-            # torch.cuda.empty_cache()
+            torch.cuda.empty_cache()
             obs_batch = [obs[i] for i in ids]
             actions_batch = [actions[i] for i in ids]
             losses = ppo.train(obs_batch, dones[ids], returns[ids], actions_batch, values[ids], log_probs[ids])
@@ -42,9 +42,13 @@ def run(batch_size=128, n_epochs=1, accum_iter=1):
         runner.writter.add_scalar(f"Losses/vf_loss", lossvals[1], step)
         runner.writter.add_scalar(f"Losses/entropy", lossvals[2], step)
         runner.writter.add_scalar(f"Losses/imitation", lossvals[3], step)
-        lossvals = [f"{loss:.5f}" for loss in lossvals]
+        lossvals = [f"{loss:.3f}" for loss in lossvals]
         lossvals = ", ".join(lossvals)
-        print(f"Training step: {step} - loss: [{lossvals}]")
+        solved_dict = {k: max(v) for k, v in runner.solved_rate_dict.items()}
+        keys = sorted(solved_dict.keys(), key=lambda x: solved_dict[x], reverse=True)
+        processed = {k.split(".")[0]: f"{solved_dict[k]*100:.0f}%" for k in keys[:4]}
+        processed = ", ".join(f"{k}: {v}" for k, v in processed.items())
+        print(f"Step: {step} - loss: [{lossvals}] - {processed}")
         step += 1
 
 
