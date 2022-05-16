@@ -149,7 +149,7 @@ def convert_solution_to_tours(nodes, solution):
 
 def plot_solution(nodes, tours, title=None):
     fig = go.Figure()
-    fig.update_layout(width=640, height=640)
+    fig.update_layout(width=320, height=320)
     if title is not None:
         fig.update_layout(title_text=title, title_x=0.5)
     
@@ -162,16 +162,18 @@ def plot_solution(nodes, tours, title=None):
             pos_y.append(node.y)
         all_pos.append((pos_x, pos_y, f"EVRP{k+1}"))
     
+    pos_x_2, pos_y_2 = [], []
     for pos_x, pos_y, name in all_pos:
-        fig.add_trace(go.Scatter(x=pos_x[:2], y=pos_y[:2], mode='lines', name=name, line_color=colors[0], line_width=2))
-        fig.add_trace(go.Scatter(x=pos_x[-2:], y=pos_y[-2:], mode='lines', name=name, line_color=colors[0], line_width=2))
-    
-    for pos_x, pos_y, name in all_pos:
-        fig.add_trace(go.Scatter(x=pos_x[1:-1], y=pos_y[1:-1], mode='lines', name=name, line_color=colors[1], line_width=2))
-    
-    for pos_x, pos_y, name in all_pos:
-        fig.add_trace(go.Scatter(x=pos_x[1:-1], y=pos_y[1:-1], mode='markers', name=name, line_color=colors[2], marker_size=2))
+        pos_x_2 += [pos_x[0], pos_x[1], pos_x[0], pos_x[-2]]
+        pos_y_2 += [pos_y[0], pos_y[1], pos_y[0], pos_y[-2]]
+    pos_x_2.append(pos_x[0])
+    pos_y_2.append(pos_y[0])
 
+    fig.add_trace(go.Scatter(x=pos_x_2, y=pos_y_2, mode='lines', name=name, line_color=colors[1], line_width=2))
+    
+    for pos_x, pos_y, name in all_pos:
+        fig.add_trace(go.Scatter(x=pos_x[1:-1], y=pos_y[1:-1], mode='lines', name=name, line_color=colors[2], line_width=2))
+    
     station_x, station_y = [], []
     for node in nodes:
         if node.is_depot:
