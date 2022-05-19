@@ -6,15 +6,15 @@ import numpy as np
 from PIL import Image
 from .VRPNode import Node
 from typing import Dict, List
-from .utils import convert_solution_to_tours, generate_init_tours, plot_solution, read_instance
+from .utils import convert_solution_to_tours, distance_between, generate_init_tours, plot_solution, read_instance
 from cvrp_cpp import CVRP
 from evrp_cpp import EVRP
 
 
-def read_nodes(node_coord_section, demand_section, round_int=False):
+def read_nodes(node_coord_section, demand_section, edge_weight=None, round_int=False):
     nodes: Dict[int, Node] = {}
     for id, x, y in node_coord_section:
-        nodes[id-1] = Node(id-1, x, y, round_int=round_int)
+        nodes[id-1] = Node(id-1, x, y, edge_weight=edge_weight, round_int=round_int)
     for id, demand in demand_section:
         nodes[id-1].demand = demand
     nodes[0].is_depot = True
@@ -178,7 +178,7 @@ class VRPInstance:
         if mode != "EVRP" and args.algo == "VNS":
             id, _, _ = data["NODE_COORD_SECTION"][-1]
             data["NODE_COORD_SECTION"].append([id+1, 0, 0])
-        nodes = read_nodes(data["NODE_COORD_SECTION"], data["DEMAND_SECTION"], args.round_int)
+        nodes = read_nodes(data["NODE_COORD_SECTION"], data["DEMAND_SECTION"], data.get("EDGE_WEIGHT_SECTION", None), args.round_int)
         if name is None:
             name = os.path.split(path)[-1]
         capacity = data["CAPACITY"]
@@ -241,7 +241,6 @@ class VRPInstance:
             f.write(f"Name : \tRandom instance\n")
             f.write(f"COMMENT : \tModified by VietBT.\n")
             f.write(f"TYPE : \t{self.mode}\n")
-            # f.write(f"OPTIMAL_VALUE : \t0\n")
             if vehicles:
                 f.write(f"VEHICLES : \t{vehicles}\n")
             f.write(f"DIMENSION : \t{n_dimension}\n")

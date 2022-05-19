@@ -45,31 +45,23 @@ def angle_between(a_x, a_y, b_x, b_y):
 @memory.cache
 def read_instance(path):
     data = {}
+    section_key = None
+    section_keys = ["EDGE_WEIGHT_SECTION", "NODE_COORD_SECTION", "DEMAND_SECTION", "STATIONS_COORD_SECTION", "DEPOT_SECTION", "EOF", "END"]
     with open(path, "r") as f:
         for line in f:
-            parts = line.strip().split(": ", 1)
+            parts = line.strip().split(":", 1)
             if len(parts) == 2:
                 data[parts[0].strip()] = read_number(parts[1].strip())
             else:
                 parts = line.split()
                 parts = [read_number(part) for part in parts]
-                if parts[0] == "NODE_COORD_SECTION":
-                    data['NODE_COORD_SECTION'] = []
-                elif parts[0] == "DEMAND_SECTION":
-                    data['DEMAND_SECTION'] = []
-                elif parts[0] == "STATIONS_COORD_SECTION":
-                    data['STATIONS_COORD_SECTION'] = []
-                elif parts[0] == "DEPOT_SECTION":
-                    data['DEPOT'] = 1
-                    break
-                elif len(parts) == 3:
-                    data['NODE_COORD_SECTION'].append(parts)
-                elif len(parts) == 2:
-                    data['DEMAND_SECTION'].append(parts)
-                elif len(parts) == 1:
-                    if 'STATIONS_COORD_SECTION' not in data:
+                if parts[0] in section_keys:
+                    section_key = parts[0]
+                    data[section_key] = []
+                else:
+                    if section_key is None:
                         continue
-                    data['STATIONS_COORD_SECTION'].append(parts[0])
+                    data[section_key].append(parts)
     return data
 
 def find_next_id(instance, solution, demand, energy, consumption, check=True):
@@ -279,10 +271,12 @@ def instance_fig(df, key, folder="dataset/train/data_evrp_wcci", return_seed=Fal
     instance = VRPInstance.from_path(f"{folder}/{key}", args, f"sub_{key}")
     instance.solution = solution
     fig = instance.plot()
+    score = instance.evaluation(solution, False)
+    # score = data.score
     if return_seed:
-        return fig, data.score, seed
+        return fig, score, seed
     else:
-        return fig, data.score
+        return fig, score
 
 def get_gap_df(df, name, running_time, heuristic_scores):
     results = defaultdict(list)

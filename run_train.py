@@ -102,8 +102,15 @@ if __name__ == "__main__":
         # "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Leuven --algo=HGS --max-count=1024 --min-extend-nodes=512 --n-envs=16",
         # "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Ghent --algo=HGS --max-count=1024 --min-extend-nodes=512 --n-envs=16",
         
-        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Brussels --algo=HGS --max-count=1024 --min-extend-nodes=1024 --n-envs=16",
-        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Flanders --algo=HGS --max-count=1024 --min-extend-nodes=1024 --n-envs=16",
+        # "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Brussels --algo=HGS --max-count=1024 --min-extend-nodes=1024 --n-envs=16",
+        # "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Flanders --algo=HGS --max-count=1024 --min-extend-nodes=1024 --n-envs=16",
+
+        # "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Antwerp --algo=VNS --max-count=1024 --min-extend-nodes=512 --n-envs=16",
+        # "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Leuven --algo=VNS --max-count=1024 --min-extend-nodes=512 --n-envs=16",
+        # "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Ghent --algo=VNS --max-count=1024 --min-extend-nodes=512 --n-envs=16",
+        
+        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Brussels --algo=VNS --max-count=1024 --min-extend-nodes=1024 --n-envs=16",
+        "python -u main.py --seed=1 --data-folder=dataset/train/realworld/Flanders --algo=VNS --max-count=1024 --min-extend-nodes=1024 --n-envs=16",
     ]
 
     folders = set([cmd.split("--data-folder=")[1].split(" --max-count")[0] for cmd in all_cmd])
