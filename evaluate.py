@@ -21,16 +21,14 @@ def run():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', type=str, default='cuda', choices=['cuda', 'cpu'])
-    parser.add_argument('--n-envs', type=int, default=32)
+    parser.add_argument('--device', type=str, default='cpu', choices=['cuda', 'cpu'])
+    parser.add_argument('--n-envs', type=int, default=1)
     parser.add_argument('--n-steps', type=int, default=16)
     parser.add_argument('--hidden-dim', type=int, default=256)
     parser.add_argument('--egde-dim', type=int, default=128)
     parser.add_argument('--gamma', type=float, default=0.995)
     parser.add_argument('--lam', type=float, default=0.95)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--batch-size', type=int, default=128)
-    parser.add_argument('--n-epochs', type=int, default=1)
     parser.add_argument('--accumulation-iteration', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default='dataset/data_cvrp')
     parser.add_argument('--min-extend-nodes', type=int, default=256)

@@ -97,6 +97,8 @@ class Runner:
             end_len = self.n_steps
         else:
             end_len = self.n_steps-1
+        
+        self.is_new_best_score = False
         for step in range(self.n_steps):
             # print(f"Step: {step+1}")
             obs = self.env.get_current_states()
@@ -130,7 +132,6 @@ class Runner:
         if self.is_new_best_score:
             self.print_best_score()
             torch.save(self.policy.state_dict(), f"{self.log_path}/{self.log_name}/model.pt")
-            self.is_new_best_score = False
 
         if self.process_rate >= 1:
             return

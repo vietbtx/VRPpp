@@ -228,7 +228,6 @@ def compute_gap(scores, heuristic_scores):
     average_gap = np.mean(gaps)
     return average_gap
 
-@memory.cache
 def load_all_scores(log_folder, seeds, keys):
     data = defaultdict(list)
     for seed in seeds:
@@ -244,7 +243,6 @@ def load_all_scores(log_folder, seeds, keys):
     df = pd.DataFrame(data).set_index(["Folder", "Running Time"])
     return df
 
-@memory.cache
 def load_all_evrp_rand_scores(log_folders, instance_keys):
     data = defaultdict(list)
     for folder in log_folders:
